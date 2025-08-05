@@ -31,12 +31,25 @@ header { background: #4CAF50; color: white; padding: 12px; text-align: center; }
   margin-bottom: 5px;
   border-radius: 6px;
 }
+
 iframe[name="VideoPlayer"] {
   width: 100%;
-  height: 200px;
-  border:none;
+  max-width: 560px;
+  height: calc(560px * 9 / 16);
+  border: none;
+  border-radius: 12px;
+  display: block;
+  margin: 20px auto;
   background: #000;
-  
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+/* Para telas menores */
+@media (max-width: 560px) {
+  iframe[name="VideoPlayer"] {
+    width: 100%;
+    height: calc(100vw * 9 / 16); /* altura proporcional à largura da viewport */
+  }
 }
 </style>
 </head>
@@ -44,7 +57,7 @@ iframe[name="VideoPlayer"] {
 
 <header id="mudartexto">Atualizado<br>Escolha um canal abaixo para assistir</header>
 
-<iframe name="VideoPlayer"></iframe>
+<iframe name="VideoPlayer" allow="encrypted-media" allowfullscreen="" frameborder="0"></iframe>
 
 <div class="lista-canais" id="listaCanais"></div>
 
@@ -534,6 +547,21 @@ function montarLista() {
 }
 
 montarLista();
+
+
+
+</script>
+<script>
+  const iframe = document.getElementById('videoPlayer');
+
+  iframe.addEventListener('dblclick', () => {
+    const requestFullscreen = iframe.requestFullscreen || iframe.webkitRequestFullscreen || iframe.mozRequestFullScreen || iframe.msRequestFullscreen;
+    if (requestFullscreen) {
+      requestFullscreen.call(iframe);
+    } else {
+      alert("Seu navegador não suporta fullscreen.");
+    }
+  });
 </script>
 
 </body>
