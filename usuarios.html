@@ -134,96 +134,97 @@
   </div>
 
   <script>
-  const urlAPI = 'https://controledeestoque.rf.gd/canais-tv/usuarios.php';
+    const urlAPI = 'https://controledeestoque.rf.gd/canais-tv/usuarios.php';
+    let usuarios = [];
 
-  let usuarios = [];
-
-  // Carrega lista do servidor
-  async function carregarUsuarios() {
-    try {
-      const res = await fetch(urlAPI);
-      if (!res.ok) throw new Error('Erro ao carregar usuários');
-      usuarios = await res.json();
-      renderizarLista();
-    } catch (e) {
-      alert('Erro ao carregar usuários: ' + e.message);
+    async function carregarUsuarios() {
+      try {
+        const res = await fetch(urlAPI);
+        if (!res.ok) throw new Error('Erro ao carregar usuários');
+        usuarios = await res.json();
+        renderizarLista();
+      } catch (e) {
+        alert('Erro ao carregar usuários: ' + e.message);
+      }
     }
-  }
 
-  // Atualiza a lista no servidor (envia lista completa)
-  async function salvarUsuarios() {
-    try {
-      const res = await fetch(urlAPI, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ usuarios })
+    function renderizarLista() {
+      const lista = document.getElementById('listaUsuarios');
+      lista.innerHTML = '';
+
+      usuarios.forEach(({nome, codigo}, i) => {
+        const li = document.createElement('li');
+        li.textContent = `${nome} — Código: ${codigo}`;
+
+        const btnRemover = document.createElement('button');
+        btnRemover.textContent = 'Remover';
+        btnRemover.classList.add('removeBtn');
+        btnRemover.onclick = () => removerUsuario(i);
+
+        li.appendChild(btnRemover);
+        lista.appendChild(li);
       });
-      if (!res.ok) throw new Error('Erro ao salvar usuários');
-      usuarios = await res.json();
-      renderizarLista();
-    } catch (e) {
-      alert('Erro ao salvar usuários: ' + e.message);
-    }
-  }
-
-  function renderizarLista() {
-    const lista = document.getElementById('listaUsuarios');
-    lista.innerHTML = '';
-
-    usuarios.forEach(({ nome, codigo }, i) => {
-      const li = document.createElement('li');
-      li.textContent = `${nome} — Código: ${codigo}`;
-
-      const btnRemover = document.createElement('button');
-      btnRemover.textContent = 'Remover';
-      btnRemover.classList.add('removeBtn');
-      btnRemover.onclick = () => removerUsuario(i);
-
-      li.appendChild(btnRemover);
-      lista.appendChild(li);
-    });
-  }
-
-  async function adicionarUsuario(nome, codigo) {
-    if (usuarios.some(u => u.codigo === codigo)) {
-      alert('Código já existe!');
-      return;
-    }
-    usuarios.push({ nome, codigo });
-    await salvarUsuarios();
-  }
-
-  async function removerUsuario(index) {
-    const usuarioRemovido = usuarios[index];
-    usuarios.splice(index, 1);
-    await salvarUsuarios();
-
-    const nomeLogado = localStorage.getItem('usuarioNome');
-    if (usuarioRemovido.nome === nomeLogado) {
-      localStorage.removeItem('acessoLiberado');
-      localStorage.removeItem('usuarioNome');
-      alert('Seu código foi removido.');
-    }
-  }
-
-  document.getElementById('btnAdicionar').onclick = async () => {
-    const nome = document.getElementById('nomeUsuario').value.trim();
-    const codigo = document.getElementById('codigoUsuario').value.trim();
-
-    if (!nome || !codigo) {
-      alert('Preencha nome e código!');
-      return;
     }
 
-    await adicionarUsuario(nome, codigo);
+    async function adicionarUsuario(nome, codigo) {
+      if (usuarios.some(u => u.codigo === codigo)) {
+        alert('Código já existe!');
+        return;
+      }
+      try {
+        const res = await fetch(urlAPI, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nome, codigo })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.erro || 'Erro ao adicionar');
+        await carregarUsuarios();
+      } catch (e) {
+        alert('Erro ao adicionar usuário: ' + e.message);
+      }
+    }
 
-    document.getElementById('nomeUsuario').value = '';
-    document.getElementById('codigoUsuario').value = '';
-  };
+    async function removerUsuario(index) {
+      const codigo = usuarios[index].codigo;
+      const nome = usuarios[index].nome;
 
-  // Inicializa a lista ao carregar a página
-  carregarUsuarios();
-</script>
+      try {
+        const res = await fetch(`${urlAPI}?codigo=${encodeURIComponent(codigo)}`, {
+          method: 'DELETE'
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.erro || 'Erro ao remover');
+        
+        if (nome === localStorage.getItem('usuarioNome')) {
+          localStorage.removeItem('acessoLiberado');
+          localStorage.removeItem('usuarioNome');
+          alert('Seu código foi removido.');
+        }
+        await carregarUsuarios();
+      } catch (e) {
+        alert('Erro ao remover usuário: ' + e.message);
+      }
+    }
+
+    document.getElementById('btnAdicionar').onclick = async () => {
+      const nome = document.getElementById('nomeUsuario').value.trim();
+      const codigo = document.getElementById('codigoUsuario').value.trim();
+
+      if (!nome || !codigo) {
+        alert('Preencha nome e código!');
+        return;
+      }
+
+      await adicionarUsuario(nome, codigo);
+
+      document.getElementById('nomeUsuario').value = '';
+      document.getElementById('codigoUsuario').value = '';
+    };
+
+    // Carrega lista ao iniciar
+    carregarUsuarios();
+  </script>
 
 </body>
 </html>
