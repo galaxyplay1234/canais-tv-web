@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Gerenciar Usuários</title>
   <style>
-    /* Reset simples */
     * {
       box-sizing: border-box;
     }
@@ -94,8 +93,6 @@
     button.removeBtn:hover {
       background: #c0392b;
     }
-
-    /* Scrollbar para lista (Chrome, Edge, Safari) */
     ul#listaUsuarios::-webkit-scrollbar {
       width: 8px;
     }
@@ -103,8 +100,6 @@
       background-color: #28a745;
       border-radius: 4px;
     }
-    
-    /* Responsividade */
     @media (max-width: 420px) {
       body {
         padding: 15px;
@@ -152,6 +147,11 @@
       const lista = document.getElementById('listaUsuarios');
       lista.innerHTML = '';
 
+      if (usuarios.length === 0) {
+        lista.innerHTML = "<li>Nenhum usuário cadastrado</li>";
+        return;
+      }
+
       usuarios.forEach(({nome, codigo}, i) => {
         const li = document.createElement('li');
         li.textContent = `${nome} — Código: ${codigo}`;
@@ -195,12 +195,13 @@
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.erro || 'Erro ao remover');
-        
+
         if (nome === localStorage.getItem('usuarioNome')) {
           localStorage.removeItem('acessoLiberado');
           localStorage.removeItem('usuarioNome');
           alert('Seu código foi removido.');
         }
+
         await carregarUsuarios();
       } catch (e) {
         alert('Erro ao remover usuário: ' + e.message);
@@ -222,7 +223,6 @@
       document.getElementById('codigoUsuario').value = '';
     };
 
-    // Carrega lista ao iniciar
     carregarUsuarios();
   </script>
 
