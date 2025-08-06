@@ -1,1 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gerenciar Usuários</title>
+  <style>
+    /* Reset simples */
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f0f0;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    #container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      padding: 25px;
+      max-width: 400px;
+      width: 100%;
+      margin-top: 20px;
+    }
+    h2 {
+      margin-top: 0;
+      margin-bottom: 20px;
+      text-align: center;
+      color: #333;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 15px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+    input[type="text"]:focus {
+      border-color: #28a745;
+      outline: none;
+    }
+    button#btnAdicionar {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      width: 100%;
+      transition: background-color 0.3s;
+    }
+    button#btnAdicionar:hover {
+      background: #218838;
+    }
+    ul#listaUsuarios {
+      list-style: none;
+      padding-left: 0;
+      margin-top: 20px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    ul#listaUsuarios li {
+      background: #f9f9f9;
+      margin-bottom: 10px;
+      padding: 12px 15px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 16px;
+      color: #333;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      word-break: break-word;
+    }
+    button.removeBtn {
+      background: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      padding: 6px 12px;
+      font-size: 14px;
+      transition: background-color 0.3s;
+    }
+    button.removeBtn:hover {
+      background: #c0392b;
+    }
 
+    /* Scrollbar para lista (Chrome, Edge, Safari) */
+    ul#listaUsuarios::-webkit-scrollbar {
+      width: 8px;
+    }
+    ul#listaUsuarios::-webkit-scrollbar-thumb {
+      background-color: #28a745;
+      border-radius: 4px;
+    }
+    
+    /* Responsividade */
+    @media (max-width: 420px) {
+      body {
+        padding: 15px;
+        align-items: center;
+      }
+      #container {
+        padding: 20px;
+        max-width: 100%;
+        margin-top: 10px;
+      }
+      ul#listaUsuarios {
+        max-height: 250px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="container">
+    <h2>Gerenciar Códigos de Acesso</h2>
+
+    <input id="nomeUsuario" type="text" placeholder="Nome do usuário" autocomplete="off" />
+    <input id="codigoUsuario" type="text" placeholder="Código de acesso" autocomplete="off" />
+    <button id="btnAdicionar">Adicionar Usuário</button>
+
+    <ul id="listaUsuarios"></ul>
+  </div>
+
+  <script>
+    let usuarios = JSON.parse(localStorage.getItem('usuarios')) || [];
+
+    function renderizarLista() {
+      const lista = document.getElementById('listaUsuarios');
+      lista.innerHTML = '';
+
+      usuarios.forEach(({nome, codigo}, i) => {
+        const li = document.createElement('li');
+        li.textContent = `${nome} — Código: ${codigo}`;
+
+        const btnRemover = document.createElement('button');
+        btnRemover.textContent = 'Remover';
+        btnRemover.classList.add('removeBtn');
+        btnRemover.onclick = () => removerUsuario(i);
+
+        li.appendChild(btnRemover);
+        lista.appendChild(li);
+      });
+    }
+
+    function removerUsuario(index) {
+      const usuarioRemovido = usuarios[index];
+      usuarios.splice(index, 1);
+      localStorage.setItem('usuarios', JSON.stringify(usuarios));
+
+      const nomeLogado = localStorage.getItem('usuarioNome');
+      if (usuarioRemovido.nome === nomeLogado) {
+        localStorage.removeItem('acessoLiberado');
+        localStorage.removeItem('usuarioNome');
+        alert('Seu código foi removido. Você será deslogado.');
+        window.location.href = 'login.html';
+        return;
+      }
+
+      renderizarLista();
+    }
+
+    document.getElementById('btnAdicionar').onclick = () => {
+      const nome = document.getElementById('nomeUsuario').value.trim();
+      const codigo = document.getElementById('codigoUsuario').value.trim();
+
+      if (!nome || !codigo) {
+        alert('Preencha nome e código!');
+        return;
+      }
+
+      if (usuarios.some(u => u.codigo === codigo)) {
+        alert('Código já existe!');
+        return;
+      }
+
+      usuarios.push({ nome, codigo });
+      localStorage.setItem('usuarios', JSON.stringify(usuarios));
+
+      document.getElementById('nomeUsuario').value = '';
+      document.getElementById('codigoUsuario').value = '';
+
+      renderizarLista();
+    };
+
+    renderizarLista();
+  </script>
+
+</body>
+</html>
