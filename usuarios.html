@@ -155,21 +155,20 @@
     }
 
     function removerUsuario(index) {
-      const usuarioRemovido = usuarios[index];
-      usuarios.splice(index, 1);
-      localStorage.setItem('usuarios', JSON.stringify(usuarios));
+  const usuarioRemovido = usuarios[index];
+  usuarios.splice(index, 1);
+  localStorage.setItem('usuarios', JSON.stringify(usuarios));
 
-      const nomeLogado = localStorage.getItem('usuarioNome');
-      if (usuarioRemovido.nome === nomeLogado) {
-        localStorage.removeItem('acessoLiberado');
-        localStorage.removeItem('usuarioNome');
-        alert('Seu código foi removido. Você será deslogado.');
-        window.location.href = 'login.html';
-        return;
-      }
+  // Se o usuário removido for o logado, apenas desloga sem redirecionar
+  const nomeLogado = localStorage.getItem('usuarioNome');
+  if (usuarioRemovido.nome === nomeLogado) {
+    localStorage.removeItem('acessoLiberado');
+    localStorage.removeItem('usuarioNome');
+    alert('Seu código foi removido.');
+  }
 
-      renderizarLista();
-    }
+  renderizarLista();
+}
 
     document.getElementById('btnAdicionar').onclick = () => {
       const nome = document.getElementById('nomeUsuario').value.trim();
