@@ -159,15 +159,15 @@
   usuarios.splice(index, 1);
   localStorage.setItem('usuarios', JSON.stringify(usuarios));
 
-  // Se o usuário removido for o logado, apenas desloga sem redirecionar
   const nomeLogado = localStorage.getItem('usuarioNome');
   if (usuarioRemovido.nome === nomeLogado) {
+    // Desloga o usuário removido, mas não redireciona para login
     localStorage.removeItem('acessoLiberado');
     localStorage.removeItem('usuarioNome');
     alert('Seu código foi removido.');
   }
 
-  renderizarLista();
+  renderizarLista(); // Atualiza lista, mantendo na mesma página
 }
 
     document.getElementById('btnAdicionar').onclick = () => {
