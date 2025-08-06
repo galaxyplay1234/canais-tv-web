@@ -1,1 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    #loginBox {
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      text-align: center;
+      width: 300px;
+    }
+    #loginBox h2 {
+      margin-bottom: 20px;
+    }
+    #loginBox input {
+      width: 90%;
+      padding: 10px;
+      font-size: 16px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      text-align: center;
+    }
+    #loginBox button {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      width: 100%;
+    }
+    #loginBox button:hover {
+      background: #218838;
+    }
+    #erroLogin {
+      color: red;
+      display: none;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
 
+  <div id="loginBox">
+    <h2>Digite o código de acesso</h2>
+    <input type="password" id="codigoAcesso" placeholder="Código">
+    <button onclick="fazerLogin()">Entrar</button>
+    <p id="erroLogin">Código incorreto!</p>
+  </div>
+
+<script>
+  // Pega a lista de usuários salva no localStorage (ou cria uma vazia se não tiver)
+  const usuarios = JSON.parse(localStorage.getItem('usuarios')) || [];
+
+  function fazerLogin() {
+    const codigo = document.getElementById("codigoAcesso").value.trim();
+    const usuario = usuarios.find(u => u.codigo === codigo);
+
+    if (usuario) {
+      localStorage.setItem("acessoLiberado", "true");
+      localStorage.setItem("usuarioNome", usuario.nome);
+      window.location.href = "index.html";
+    } else {
+      document.getElementById("erroLogin").style.display = "block";
+    }
+  }
+
+  // Se já estiver logado, vai direto pra index
+  if (localStorage.getItem("acessoLiberado") === "true") {
+    window.location.href = "index.html";
+  }
+</script>
+</body>
+</html>
