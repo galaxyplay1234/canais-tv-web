@@ -25,187 +25,122 @@
       width: 100%;
       margin-top: 20px;
     }
-    h2 {
-      margin-top: 0;
-      margin-bottom: 20px;
-      text-align: center;
-      color: #333;
-    }
+    h2 { margin-top: 0; margin-bottom: 20px; text-align: center; color: #333; }
     input[type="text"] {
-      width: 100%;
-      padding: 12px 15px;
-      margin-bottom: 15px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 16px;
+      width: 100%; padding: 12px 15px; margin-bottom: 15px;
+      border: 1px solid #ccc; border-radius: 8px; font-size: 16px;
     }
-    input[type="text"]:focus {
-      border-color: #28a745;
-      outline: none;
+    button#btnAdicionar {
+      background: #28a745; color: white; border: none; padding: 12px;
+      border-radius: 8px; cursor: pointer; font-size: 16px; width: 100%;
     }
-    button {
-      background: #28a745;
-      color: white;
-      border: none;
-      padding: 12px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 16px;
-      width: 100%;
-    }
-    button:hover { background: #218838; }
-    ul {
-      list-style: none;
-      padding-left: 0;
-      margin-top: 20px;
-      max-height: 300px;
-      overflow-y: auto;
-    }
-    ul li {
-      background: #f9f9f9;
-      margin-bottom: 10px;
-      padding: 12px 15px;
-      border-radius: 8px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 16px;
-      color: #333;
+    ul#listaUsuarios { list-style: none; padding-left: 0; margin-top: 20px; }
+    ul#listaUsuarios li {
+      background: #f9f9f9; margin-bottom: 10px; padding: 12px 15px;
+      border-radius: 8px; display: flex; justify-content: space-between;
+      align-items: center; font-size: 16px; color: #333;
     }
     button.removeBtn {
-      background: #e74c3c;
-      padding: 6px 12px;
-      border-radius: 6px;
+      background: #e74c3c; color: white; border: none;
+      border-radius: 6px; cursor: pointer; padding: 6px 12px;
       font-size: 14px;
-    }
-    button.removeBtn:hover { background: #c0392b; }
-    #mensagem {
-      text-align: center;
-      margin-top: 10px;
-      font-size: 14px;
-      color: #555;
     }
   </style>
 </head>
 <body>
 
-<div id="container">
-  <h2>Gerenciar Códigos de Acesso</h2>
+  <div id="container">
+    <h2>Gerenciar Códigos de Acesso</h2>
+    <input id="nomeUsuario" type="text" placeholder="Nome do usuário" autocomplete="off" />
+    <input id="codigoUsuario" type="text" placeholder="Código de acesso" autocomplete="off" />
+    <button id="btnAdicionar">Adicionar Usuário</button>
+    <ul id="listaUsuarios"></ul>
+  </div>
 
-  <input id="nomeUsuario" type="text" placeholder="Nome do usuário" autocomplete="off" />
-  <input id="codigoUsuario" type="text" placeholder="Código de acesso" autocomplete="off" />
-  <button id="btnAdicionar">Adicionar Usuário</button>
+  <script>
+    const urlAPI = 'https://controledeestoque.rf.gd/canais-tv/usuarios.php';
+    let usuarios = [];
 
-  <div id="mensagem"></div>
-  <ul id="listaUsuarios"></ul>
-</div>
-
-<script>
-  const urlAPI = 'https://controledeestoque.rf.gd/canais-tv/usuarios.php';
-  let usuarios = [];
-
-  async function carregarUsuarios() {
-    try {
-      const res = await fetch(urlAPI);
-      if (!res.ok) throw new Error('Erro ao carregar usuários');
-      usuarios = await res.json();
-      renderizarLista();
-    } catch (e) {
-      mostrarMensagem('Erro ao carregar usuários: ' + e.message, true);
-    }
-  }
-
-  function renderizarLista() {
-    const lista = document.getElementById('listaUsuarios');
-    lista.innerHTML = '';
-
-    if (usuarios.length === 0) {
-      lista.innerHTML = "<li style='text-align:center;'>Nenhum usuário cadastrado</li>";
-      return;
-    }
-
-    usuarios.forEach(({nome, codigo}, i) => {
-      const li = document.createElement('li');
-      li.textContent = `${nome} — Código: ${codigo}`;
-
-      const btnRemover = document.createElement('button');
-      btnRemover.textContent = 'Remover';
-      btnRemover.classList.add('removeBtn');
-      btnRemover.onclick = () => removerUsuario(i);
-
-      li.appendChild(btnRemover);
-      lista.appendChild(li);
-    });
-  }
-
-  async function adicionarUsuario(nome, codigo) {
-    if (usuarios.some(u => u.codigo === codigo)) {
-      mostrarMensagem('Código já existe!', true);
-      return;
-    }
-    try {
-      const res = await fetch(urlAPI, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome, codigo })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.erro || 'Erro ao adicionar');
-      mostrarMensagem('Usuário adicionado com sucesso!');
-      await carregarUsuarios();
-    } catch (e) {
-      mostrarMensagem('Erro ao adicionar usuário: ' + e.message, true);
-    }
-  }
-
-  async function removerUsuario(index) {
-    const codigo = usuarios[index].codigo;
-    const nome = usuarios[index].nome;
-
-    try {
-      const res = await fetch(`${urlAPI}?codigo=${encodeURIComponent(codigo)}`, {
-        method: 'DELETE'
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.erro || 'Erro ao remover');
-
-      if (nome === localStorage.getItem('usuarioNome')) {
-        localStorage.removeItem('acessoLiberado');
-        localStorage.removeItem('usuarioNome');
-        mostrarMensagem('Seu código foi removido.');
-      } else {
-        mostrarMensagem('Usuário removido com sucesso!');
+    async function carregarUsuarios() {
+      try {
+        const res = await fetch(urlAPI);
+        if (!res.ok) throw new Error('Erro ao carregar usuários');
+        usuarios = await res.json();
+        renderizarLista();
+      } catch (e) {
+        alert('Erro ao carregar usuários: ' + e.message);
       }
-      await carregarUsuarios();
-    } catch (e) {
-      mostrarMensagem('Erro ao remover usuário: ' + e.message, true);
-    }
-  }
-
-  function mostrarMensagem(msg, erro = false) {
-    const div = document.getElementById('mensagem');
-    div.style.color = erro ? 'red' : 'green';
-    div.textContent = msg;
-    setTimeout(() => { div.textContent = ''; }, 3000);
-  }
-
-  document.getElementById('btnAdicionar').onclick = async () => {
-    const nome = document.getElementById('nomeUsuario').value.trim();
-    const codigo = document.getElementById('codigoUsuario').value.trim();
-
-    if (!nome || !codigo) {
-      mostrarMensagem('Preencha nome e código!', true);
-      return;
     }
 
-    await adicionarUsuario(nome, codigo);
+    function renderizarLista() {
+      const lista = document.getElementById('listaUsuarios');
+      lista.innerHTML = usuarios.length === 0
+        ? "<li>Nenhum usuário cadastrado</li>"
+        : '';
 
-    document.getElementById('nomeUsuario').value = '';
-    document.getElementById('codigoUsuario').value = '';
-  };
+      usuarios.forEach(({nome, codigo}, i) => {
+        const li = document.createElement('li');
+        li.textContent = `${nome} — Código: ${codigo}`;
 
-  carregarUsuarios();
-</script>
+        const btnRemover = document.createElement('button');
+        btnRemover.textContent = 'Remover';
+        btnRemover.classList.add('removeBtn');
+        btnRemover.onclick = () => removerUsuario(codigo, nome);
+
+        li.appendChild(btnRemover);
+        lista.appendChild(li);
+      });
+    }
+
+    async function adicionarUsuario(nome, codigo) {
+      try {
+        const res = await fetch(urlAPI, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nome, codigo })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.erro || 'Erro ao adicionar');
+        await carregarUsuarios();
+      } catch (e) {
+        alert('Erro ao adicionar usuário: ' + e.message);
+      }
+    }
+
+    async function removerUsuario(codigo, nome) {
+      try {
+        const res = await fetch(`${urlAPI}?codigo=${encodeURIComponent(codigo)}`, {
+          method: 'DELETE'
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.erro || 'Erro ao remover');
+
+        if (nome === localStorage.getItem('usuarioNome')) {
+          localStorage.removeItem('acessoLiberado');
+          localStorage.removeItem('usuarioNome');
+          alert('Seu código foi removido.');
+        }
+
+        await carregarUsuarios();
+      } catch (e) {
+        alert('Erro ao remover usuário: ' + e.message);
+      }
+    }
+
+    document.getElementById('btnAdicionar').onclick = async () => {
+      const nome = document.getElementById('nomeUsuario').value.trim();
+      const codigo = document.getElementById('codigoUsuario').value.trim();
+      if (!nome || !codigo) {
+        alert('Preencha nome e código!');
+        return;
+      }
+      await adicionarUsuario(nome, codigo);
+      document.getElementById('nomeUsuario').value = '';
+      document.getElementById('codigoUsuario').value = '';
+    };
+
+    carregarUsuarios();
+  </script>
 
 </body>
 </html>
