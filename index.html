@@ -81,7 +81,7 @@ iframe[name="VideoPlayer"] {
 <div class="lista-canais" id="listaCanais"></div>
 
 <script>
-  // Config do Firebase (use a sua config)
+  // Config do Firebase
   const firebaseConfig = {
     apiKey: "AIzaSyC_zjO-vZyeG_LzWhSbsr_lHrQbhq8C5gc",
     authDomain: "canais-tv-web.firebaseapp.com",
@@ -92,14 +92,11 @@ iframe[name="VideoPlayer"] {
     appId: "1:77739128467:web:dea40e2c692886315f3f66"
   };
 
-  // Inicializa Firebase
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
 
-  // Variável global para usuários do Firebase
   let usuariosFirebase = [];
 
-  // Função para carregar usuários do Firebase
   function carregarUsuariosFirebase() {
     return new Promise((resolve, reject) => {
       db.ref('usuarios').once('value', snapshot => {
@@ -113,34 +110,20 @@ iframe[name="VideoPlayer"] {
     });
   }
 
-  // Função para validar login
   async function validarLogin() {
-    try {
-      await carregarUsuariosFirebase();
-      const acessoLiberado = localStorage.getItem("acessoLiberado");
-      const usuarioNome = localStorage.getItem("usuarioNome");
+    await carregarUsuariosFirebase();
+    const acessoLiberado = localStorage.getItem("acessoLiberado");
+    const usuarioNome = localStorage.getItem("usuarioNome");
 
-      if (
-        acessoLiberado !== "true" ||
-        !usuariosFirebase.some(u => u.nome === usuarioNome)
-      ) {
-        // Se não estiver logado ou usuário removido, desloga
-        localStorage.removeItem("acessoLiberado");
-        localStorage.removeItem("usuarioNome");
-        window.location.href = "login.html";
-      }
-    } catch (e) {
-      alert("Erro ao validar login: " + e.message);
-      // Opcional: redirecionar para login se erro
+    if (acessoLiberado !== "true" || !usuariosFirebase.some(u => u.nome === usuarioNome)) {
+      localStorage.removeItem("acessoLiberado");
+      localStorage.removeItem("usuarioNome");
       window.location.href = "login.html";
     }
   }
 
   validarLogin();
 
-  // -- O resto do seu script permanece igual --
-
-  // Código abaixo mantém a funcionalidade dos canais etc, sem mexer
   let canais = [];
   let listaCanaisOriginal = [];
   let canalAtivo = null;
@@ -201,17 +184,7 @@ iframe[name="VideoPlayer"] {
     montarLista(filtrados);
   });
 
-  const iframe = document.querySelector('iframe[name="VideoPlayer"]');
-
-  iframe.addEventListener('dblclick', () => {
-    const requestFullscreen = iframe.requestFullscreen || iframe.webkitRequestFullscreen || iframe.mozRequestFullScreen || iframe.msRequestFullscreen;
-    if (requestFullscreen) {
-      requestFullscreen.call(iframe);
-    } else {
-      alert("Seu navegador não suporta fullscreen.");
-    }
-  });
-
+  // Duplicata removida - já usamos querySelector acima
 </script>
 
 <script>
