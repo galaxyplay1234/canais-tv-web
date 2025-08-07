@@ -3,18 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Gerenciar Usuários</title>
+  <title>Gerenciar Usuários (Firebase)</title>
   <style>
-    * { box-sizing: border-box; }
+    /* Seu CSS igual ao anterior */
     body {
       font-family: Arial, sans-serif;
       background: #f0f0f0;
-      margin: 0;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      min-height: 100vh;
-      padding: 20px;
+      margin: 0; padding: 20px;
+      display: flex; justify-content: center; align-items: flex-start; min-height: 100vh;
     }
     #container {
       background: white;
@@ -25,30 +21,26 @@
       width: 100%;
       margin-top: 20px;
     }
-    h2 { margin-top: 0; margin-bottom: 20px; text-align: center; color: #333; }
-    input[type="text"] {
-      width: 100%; padding: 12px 15px; margin-bottom: 15px;
-      border: 1px solid #ccc; border-radius: 8px; font-size: 16px;
+    input, button { width: 100%; margin-bottom: 15px; padding: 12px; font-size: 16px; border-radius: 8px; border: 1px solid #ccc; }
+    input:focus { border-color: #28a745; outline: none; }
+    button {
+      border:none; background:#28a745; color:#fff; cursor:pointer; transition: background-color 0.3s;
     }
-    button#btnAdicionar {
-      background: #28a745; color: white; border: none; padding: 12px;
-      border-radius: 8px; cursor: pointer; font-size: 16px; width: 100%;
+    button:hover { background:#218838; }
+    ul { list-style:none; padding-left:0; max-height: 300px; overflow-y:auto; }
+    li {
+      background: #f9f9f9; margin-bottom: 10px; padding: 12px 15px; border-radius: 8px;
+      display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      word-break: break-word;
     }
-    ul#listaUsuarios { list-style: none; padding-left: 0; margin-top: 20px; }
-    ul#listaUsuarios li {
-      background: #f9f9f9; margin-bottom: 10px; padding: 12px 15px;
-      border-radius: 8px; display: flex; justify-content: space-between;
-      align-items: center; font-size: 16px; color: #333;
+    .removeBtn {
+      background: #e74c3c; border:none; border-radius: 6px; padding: 6px 12px; font-size:14px; cursor:pointer;
+      color:#fff; transition: background-color 0.3s;
     }
-    button.removeBtn {
-      background: #e74c3c; color: white; border: none;
-      border-radius: 6px; cursor: pointer; padding: 6px 12px;
-      font-size: 14px;
-    }
+    .removeBtn:hover { background:#c0392b; }
   </style>
 </head>
 <body>
-
   <div id="container">
     <h2>Gerenciar Códigos de Acesso</h2>
     <input id="nomeUsuario" type="text" placeholder="Nome do usuário" autocomplete="off" />
@@ -57,90 +49,95 @@
     <ul id="listaUsuarios"></ul>
   </div>
 
-  <script>
-    const urlAPI = 'https://controledeestoque.rf.gd/canais-tv/usuarios.php';
-    let usuarios = [];
+  <!-- Firebase App (the core Firebase SDK) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+    import { getDatabase, ref, push, set, onValue, remove, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
 
-    async function carregarUsuarios() {
-      try {
-        const res = await fetch(urlAPI);
-        if (!res.ok) throw new Error('Erro ao carregar usuários');
-        usuarios = await res.json();
+    const firebaseConfig = {
+      apiKey: "AIzaSyC_zjO-vZyeG_LzWhSbsr_lHrQbhq8C5gc",
+      authDomain: "canais-tv-web.firebaseapp.com",
+      databaseURL: "https://canais-tv-web-default-rtdb.firebaseio.com",
+      projectId: "canais-tv-web",
+      storageBucket: "canais-tv-web.firebasestorage.app",
+      messagingSenderId: "77739128467",
+      appId: "1:77739128467:web:dea40e2c692886315f3f66"
+    };
+
+    // Inicializa Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const listaUsuarios = document.getElementById('listaUsuarios');
+    let usuarios = {}; // objeto para armazenar usuários com chave do DB
+
+    // Carregar usuários do Firebase
+    function carregarUsuarios() {
+      const usuariosRef = ref(db, 'usuarios');
+      onValue(usuariosRef, (snapshot) => {
+        const data = snapshot.val();
+        usuarios = data || {};
         renderizarLista();
-      } catch (e) {
-        alert('Erro ao carregar usuários: ' + e.message);
-      }
+      });
     }
 
     function renderizarLista() {
-      const lista = document.getElementById('listaUsuarios');
-      lista.innerHTML = usuarios.length === 0
-        ? "<li>Nenhum usuário cadastrado</li>"
-        : '';
+      listaUsuarios.innerHTML = '';
+      if (Object.keys(usuarios).length === 0) {
+        listaUsuarios.innerHTML = '<li>Nenhum usuário cadastrado</li>';
+        return;
+      }
 
-      usuarios.forEach(({nome, codigo}, i) => {
+      Object.entries(usuarios).forEach(([key, { nome, codigo }]) => {
         const li = document.createElement('li');
         li.textContent = `${nome} — Código: ${codigo}`;
 
         const btnRemover = document.createElement('button');
         btnRemover.textContent = 'Remover';
         btnRemover.classList.add('removeBtn');
-        btnRemover.onclick = () => removerUsuario(codigo, nome);
+        btnRemover.onclick = () => removerUsuario(key);
 
         li.appendChild(btnRemover);
-        lista.appendChild(li);
+        listaUsuarios.appendChild(li);
       });
     }
 
+    // Adicionar usuário novo
     async function adicionarUsuario(nome, codigo) {
-      try {
-        const res = await fetch(urlAPI, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nome, codigo })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.erro || 'Erro ao adicionar');
-        await carregarUsuarios();
-      } catch (e) {
-        alert('Erro ao adicionar usuário: ' + e.message);
+      // verifica se código já existe
+      if (Object.values(usuarios).some(u => u.codigo === codigo)) {
+        alert('Código já existe!');
+        return;
       }
+      // salva novo usuário
+      const novoUsuarioRef = push(ref(db, 'usuarios'));
+      await set(novoUsuarioRef, { nome, codigo });
     }
 
-    async function removerUsuario(codigo, nome) {
-      try {
-        const res = await fetch(`${urlAPI}?codigo=${encodeURIComponent(codigo)}`, {
-          method: 'DELETE'
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.erro || 'Erro ao remover');
-
-        if (nome === localStorage.getItem('usuarioNome')) {
-          localStorage.removeItem('acessoLiberado');
-          localStorage.removeItem('usuarioNome');
-          alert('Seu código foi removido.');
-        }
-
-        await carregarUsuarios();
-      } catch (e) {
-        alert('Erro ao remover usuário: ' + e.message);
-      }
+    // Remover usuário por chave
+    async function removerUsuario(key) {
+      await remove(ref(db, 'usuarios/' + key));
+      // Se quiser, checar e remover localStorage igual antes
     }
 
     document.getElementById('btnAdicionar').onclick = async () => {
       const nome = document.getElementById('nomeUsuario').value.trim();
       const codigo = document.getElementById('codigoUsuario').value.trim();
+
       if (!nome || !codigo) {
         alert('Preencha nome e código!');
         return;
       }
-      await adicionarUsuario(nome, codigo);
-      document.getElementById('nomeUsuario').value = '';
-      document.getElementById('codigoUsuario').value = '';
+      try {
+        await adicionarUsuario(nome, codigo);
+        document.getElementById('nomeUsuario').value = '';
+        document.getElementById('codigoUsuario').value = '';
+      } catch(e) {
+        alert('Erro ao adicionar usuário: ' + e.message);
+      }
     };
 
     carregarUsuarios();
   </script>
-
 </body>
 </html>
