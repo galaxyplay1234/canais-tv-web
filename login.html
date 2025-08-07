@@ -64,26 +64,53 @@
   </div>
 
 <script>
-  // Pega a lista de usuários salva no localStorage (ou cria uma vazia se não tiver)
-  const usuarios = JSON.parse(localStorage.getItem('usuarios')) || [];
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
-  function fazerLogin() {
-    const codigo = document.getElementById("codigoAcesso").value.trim();
-    const usuario = usuarios.find(u => u.codigo === codigo);
+  <script>
+    // Configuração do Firebase
+    const firebaseConfig = {
+      apiKey: "SUA_API_KEY",
+      authDomain: "SEU_DOMINIO.firebaseapp.com",
+      databaseURL: "https://SEU_DOMINIO.firebaseio.com",
+      projectId: "SEU_PROJETO_ID",
+      storageBucket: "SEU_BUCKET.appspot.com",
+      messagingSenderId: "SEU_SENDER_ID",
+      appId: "SEU_APP_ID"
+    };
 
-    if (usuario) {
-      localStorage.setItem("acessoLiberado", "true");
-      localStorage.setItem("usuarioNome", usuario.nome);
+    // Inicializa o Firebase
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    // Redireciona se já estiver logado
+    if (localStorage.getItem("acessoLiberado") === "true") {
       window.location.href = "index.html";
-    } else {
-      document.getElementById("erroLogin").style.display = "block";
     }
-  }
 
-  // Se já estiver logado, vai direto pra index
-  if (localStorage.getItem("acessoLiberado") === "true") {
-    window.location.href = "index.html";
-  }
-</script>
+    function fazerLogin() {
+      const codigo = document.getElementById("codigoAcesso").value.trim();
+
+      firebase.database().ref("usuarios").once("value", (snapshot) => {
+        const usuarios = snapshot.val();
+        let acessoValido = false;
+
+        for (let id in usuarios) {
+          if (usuarios[id].codigo === codigo) {
+            acessoValido = true;
+            localStorage.setItem("acessoLiberado", "true");
+            localStorage.setItem("usuarioNome", usuarios[id].nome || "");
+            window.location.href = "index.html";
+            break;
+          }
+        }
+
+        if (!acessoValido) {
+          document.getElementById("erroLogin").style.display = "block";
+        }
+      });
+    }
+  </script>
 </body>
 </html>
