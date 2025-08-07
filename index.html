@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 <title>On Futebol</title>
 <style>
 body { margin:0; font-family: 'Maven Pro', sans-serif; background: #f9f9f9;}
@@ -79,90 +81,137 @@ iframe[name="VideoPlayer"] {
 <div class="lista-canais" id="listaCanais"></div>
 
 <script>
-// Verifica login e se o usuário ainda está na lista
-const acessoLiberado = localStorage.getItem("acessoLiberado");
-const usuarioNome = localStorage.getItem("usuarioNome");
-const usuarios = JSON.parse(localStorage.getItem("usuarios")) || [];
+  // Config do Firebase (use a sua config)
+  const firebaseConfig = {
+    apiKey: "AIzaSyC_zjO-vZyeG_LzWhSbsr_lHrQbhq8C5gc",
+    authDomain: "canais-tv-web.firebaseapp.com",
+    databaseURL: "https://canais-tv-web-default-rtdb.firebaseio.com",
+    projectId: "canais-tv-web",
+    storageBucket: "canais-tv-web.appspot.com",
+    messagingSenderId: "77739128467",
+    appId: "1:77739128467:web:dea40e2c692886315f3f66"
+  };
 
-if (acessoLiberado !== "true" || !usuarios.some(u => u.nome === usuarioNome)) {
-  // Se não estiver logado ou usuário removido, desloga
-  localStorage.removeItem("acessoLiberado");
-  localStorage.removeItem("usuarioNome");
-  window.location.href = "login.html";
-}
+  // Inicializa Firebase
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
 
+  // Variável global para usuários do Firebase
+  let usuariosFirebase = [];
 
+  // Função para carregar usuários do Firebase
+  function carregarUsuariosFirebase() {
+    return new Promise((resolve, reject) => {
+      db.ref('usuarios').once('value', snapshot => {
+        usuariosFirebase = [];
+        snapshot.forEach(childSnapshot => {
+          const u = childSnapshot.val();
+          usuariosFirebase.push({ nome: u.nome, codigo: u.codigo });
+        });
+        resolve(usuariosFirebase);
+      }, reject);
+    });
+  }
 
-let canais = [];
-let listaCanaisOriginal = [];
-let canalAtivo = null; // guarda o nome do canal clicado
+  // Função para validar login
+  async function validarLogin() {
+    try {
+      await carregarUsuariosFirebase();
+      const acessoLiberado = localStorage.getItem("acessoLiberado");
+      const usuarioNome = localStorage.getItem("usuarioNome");
 
-// Mudar texto do topo
-function mudarCanal(name) {
-  document.getElementById("mudartexto").innerHTML = "Você está assistindo:<br>" + name;
-}
-
-// Montar lista
-function montarLista(canaisParaExibir) {
-  const container = document.getElementById("listaCanais");
-  container.innerHTML = "";
-
-  canaisParaExibir.forEach(canal => {
-    const a = document.createElement("a");
-    a.href = "#";
-
-    // Aplica destaque se for o canal ativo
-    if (canal.name === canalAtivo) {
-      a.style.backgroundColor = "#e0f2e9"; // verde clarinho
+      if (
+        acessoLiberado !== "true" ||
+        !usuariosFirebase.some(u => u.nome === usuarioNome)
+      ) {
+        // Se não estiver logado ou usuário removido, desloga
+        localStorage.removeItem("acessoLiberado");
+        localStorage.removeItem("usuarioNome");
+        window.location.href = "login.html";
+      }
+    } catch (e) {
+      alert("Erro ao validar login: " + e.message);
+      // Opcional: redirecionar para login se erro
+      window.location.href = "login.html";
     }
+  }
 
-    a.onclick = (e) => {
-      e.preventDefault();
+  validarLogin();
 
-      // Define como canal ativo
-      canalAtivo = canal.name;
+  // -- O resto do seu script permanece igual --
 
-      // Troca no player
-      document.querySelector('iframe[name="VideoPlayer"]').src = canal.url;
-      mudarCanal(canal.name);
+  // Código abaixo mantém a funcionalidade dos canais etc, sem mexer
+  let canais = [];
+  let listaCanaisOriginal = [];
+  let canalAtivo = null;
 
-      // Limpa busca
-      document.getElementById('buscaCanais').value = "";
+  function mudarCanal(name) {
+    document.getElementById("mudartexto").innerHTML = "Você está assistindo:<br>" + name;
+  }
 
-      // Volta para lista completa
-      montarLista(listaCanaisOriginal);
+  function montarLista(canaisParaExibir) {
+    const container = document.getElementById("listaCanais");
+    container.innerHTML = "";
 
-      // Sobe para o topo
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
+    canaisParaExibir.forEach(canal => {
+      const a = document.createElement("a");
+      a.href = "#";
 
-    a.innerHTML = `
-      <img src="${canal.image}" alt="${canal.name}" class="iconelista" />
-      <b>${canal.name}</b><br>
-    `;
+      if (canal.name === canalAtivo) {
+        a.style.backgroundColor = "#e0f2e9";
+      }
 
-    container.appendChild(a);
+      a.onclick = (e) => {
+        e.preventDefault();
+        canalAtivo = canal.name;
+        document.querySelector('iframe[name="VideoPlayer"]').src = canal.url;
+        mudarCanal(canal.name);
+        document.getElementById('buscaCanais').value = "";
+        montarLista(listaCanaisOriginal);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+
+      a.innerHTML = `
+        <img src="${canal.image}" alt="${canal.name}" class="iconelista" />
+        <b>${canal.name}</b><br>
+      `;
+
+      container.appendChild(a);
+    });
+
+    if (canaisParaExibir.length === 0) {
+      container.innerHTML = "<p>Nenhum canal encontrado.</p>";
+    }
+  }
+
+  fetch("https://sinalpublico.vercel.app/channels.json")
+    .then(res => res.json())
+    .then(data => {
+      canais = data;
+      listaCanaisOriginal = data;
+      montarLista(canais);
+    });
+
+  document.getElementById('buscaCanais').addEventListener('input', function () {
+    const termo = this.value.toLowerCase();
+    const filtrados = listaCanaisOriginal.filter(c =>
+      c.name.toLowerCase().includes(termo) ||
+      (c.category && c.category.toLowerCase().includes(termo))
+    );
+    montarLista(filtrados);
   });
-}
 
-// Buscar canais da API
-fetch("https://sinalpublico.vercel.app/channels.json")
-  .then(res => res.json())
-  .then(data => {
-    canais = data;
-    listaCanaisOriginal = data;
-    montarLista(canais);
+  const iframe = document.querySelector('iframe[name="VideoPlayer"]');
+
+  iframe.addEventListener('dblclick', () => {
+    const requestFullscreen = iframe.requestFullscreen || iframe.webkitRequestFullscreen || iframe.mozRequestFullScreen || iframe.msRequestFullscreen;
+    if (requestFullscreen) {
+      requestFullscreen.call(iframe);
+    } else {
+      alert("Seu navegador não suporta fullscreen.");
+    }
   });
 
-// Filtro de busca
-document.getElementById('buscaCanais').addEventListener('input', function () {
-  const termo = this.value.toLowerCase();
-  const filtrados = listaCanaisOriginal.filter(c =>
-    c.name.toLowerCase().includes(termo) ||
-    (c.category && c.category.toLowerCase().includes(termo))
-  );
-  montarLista(filtrados);
-});
 </script>
 
 <script>
