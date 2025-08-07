@@ -6,21 +6,39 @@
   <title>Gerenciar Usuários (Firebase)</title>
   <style>
     /* Seu CSS igual ao anterior */
-    body {
-      font-family: Arial, sans-serif;
-      background: #f0f0f0;
-      margin: 0; padding: 20px;
-      display: flex; justify-content: center; align-items: flex-start; min-height: 100vh;
-    }
-    #container {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      padding: 25px;
-      max-width: 400px;
-      width: 100%;
-      margin-top: 20px;
-    }
+    #container input,
+#container button {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0 0 15px 0; /* margem inferior */
+}
+
+#container {
+  max-width: 400px;
+  width: 100%;
+  padding: 25px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  margin-top: 20px;
+  /* adicione para evitar deslocamento inesperado */
+  text-align: left;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background: #f0f0f0;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 20px;
+  /* força largura total para não deixar inputs saírem */
+  overflow-x: hidden;
+}
+
     input, button { width: 100%; margin-bottom: 15px; padding: 12px; font-size: 16px; border-radius: 8px; border: 1px solid #ccc; }
     input:focus { border-color: #28a745; outline: none; }
     button {
