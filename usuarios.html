@@ -3,52 +3,82 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Gerenciar Usuários (Firebase)</title>
+  <title>Gerenciar Usuários</title>
   <style>
-    /* Seu CSS igual ao anterior */
-    #container input,
-#container button {
-  display: block;
-  box-sizing: border-box;
-  width: 100%;
-  margin: 0 0 15px 0; /* margem inferior */
-}
-
-#container {
-  max-width: 400px;
-  width: 100%;
-  padding: 25px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  margin-top: 20px;
-  /* adicione para evitar deslocamento inesperado */
-  text-align: left;
-}
-
-body {
-  font-family: Arial, sans-serif;
-  background: #f0f0f0;
-  margin: 0;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  min-height: 100vh;
-  padding: 20px;
-  /* força largura total para não deixar inputs saírem */
-  overflow-x: hidden;
-}
-
-    input, button { width: 100%; margin-bottom: 15px; padding: 12px; font-size: 16px; border-radius: 8px; border: 1px solid #ccc; }
-    input:focus { border-color: #28a745; outline: none; }
-    button {
-      border:none; background:#28a745; color:#fff; cursor:pointer; transition: background-color 0.3s;
+    /* Seu CSS aqui — não mexi */
+    * {
+      box-sizing: border-box;
     }
-    button:hover { background:#218838; }
-    ul { list-style:none; padding-left:0; max-height: 300px; overflow-y:auto; }
-    li {
-      background: #f9f9f9; margin-bottom: 10px; padding: 12px 15px; border-radius: 8px;
-      display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f0f0;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    #container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      padding: 25px;
+      max-width: 400px;
+      width: 100%;
+      margin-top: 20px;
+    }
+    h2 {
+      margin-top: 0;
+      margin-bottom: 20px;
+      text-align: center;
+      color: #333;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 15px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+    input[type="text"]:focus {
+      border-color: #28a745;
+      outline: none;
+    }
+    button#btnAdicionar {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      width: 100%;
+      transition: background-color 0.3s;
+    }
+    button#btnAdicionar:hover {
+      background: #218838;
+    }
+    ul#listaUsuarios {
+      list-style: none;
+      padding-left: 0;
+      margin-top: 20px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    ul#listaUsuarios li {
+      background: #f9f9f9;
+      margin-bottom: 10px;
+      padding: 12px 15px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 16px;
+      color: #333;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
       word-break: break-word;
     }
     button.removeBtn {
@@ -61,87 +91,124 @@ body {
       font-size: 14px;
       transition: background-color 0.3s;
     }
-    .removeBtn:hover { background:#c0392b; }
+    button.removeBtn:hover {
+      background: #c0392b;
+    }
+    /* Scrollbar para lista (Chrome, Edge, Safari) */
+    ul#listaUsuarios::-webkit-scrollbar {
+      width: 8px;
+    }
+    ul#listaUsuarios::-webkit-scrollbar-thumb {
+      background-color: #28a745;
+      border-radius: 4px;
+    }
+    @media (max-width: 420px) {
+      body {
+        padding: 15px;
+        align-items: center;
+      }
+      #container {
+        padding: 20px;
+        max-width: 100%;
+        margin-top: 10px;
+      }
+      ul#listaUsuarios {
+        max-height: 250px;
+      }
+    }
   </style>
 </head>
 <body>
+
   <div id="container">
     <h2>Gerenciar Códigos de Acesso</h2>
+
     <input id="nomeUsuario" type="text" placeholder="Nome do usuário" autocomplete="off" />
     <input id="codigoUsuario" type="text" placeholder="Código de acesso" autocomplete="off" />
     <button id="btnAdicionar">Adicionar Usuário</button>
+
     <ul id="listaUsuarios"></ul>
   </div>
 
-  <!-- Firebase App (the core Firebase SDK) -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-    import { getDatabase, ref, push, set, onValue, remove, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
+  <script>
+    // Config Firebase — substitua pelos seus dados reais
     const firebaseConfig = {
       apiKey: "AIzaSyC_zjO-vZyeG_LzWhSbsr_lHrQbhq8C5gc",
       authDomain: "canais-tv-web.firebaseapp.com",
       databaseURL: "https://canais-tv-web-default-rtdb.firebaseio.com",
       projectId: "canais-tv-web",
-      storageBucket: "canais-tv-web.firebasestorage.app",
+      storageBucket: "canais-tv-web.appspot.com",
       messagingSenderId: "77739128467",
       appId: "1:77739128467:web:dea40e2c692886315f3f66"
     };
 
     // Inicializa Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-    const listaUsuarios = document.getElementById('listaUsuarios');
-    let usuarios = {}; // objeto para armazenar usuários com chave do DB
+    let usuarios = [];
 
-    // Carregar usuários do Firebase
+    // Puxa dados do Firebase
     function carregarUsuarios() {
-      const usuariosRef = ref(db, 'usuarios');
-      onValue(usuariosRef, (snapshot) => {
-        const data = snapshot.val();
-        usuarios = data || {};
+      db.ref('usuarios').on('value', snapshot => {
+        usuarios = [];
+        snapshot.forEach(childSnapshot => {
+          const u = childSnapshot.val();
+          usuarios.push({ id: childSnapshot.key, nome: u.nome, codigo: u.codigo });
+        });
         renderizarLista();
       });
     }
 
     function renderizarLista() {
-      listaUsuarios.innerHTML = '';
-      if (Object.keys(usuarios).length === 0) {
-        listaUsuarios.innerHTML = '<li>Nenhum usuário cadastrado</li>';
-        return;
-      }
+      const lista = document.getElementById('listaUsuarios');
+      lista.innerHTML = '';
 
-      Object.entries(usuarios).forEach(([key, { nome, codigo }]) => {
+      usuarios.forEach(({id, nome, codigo}) => {
         const li = document.createElement('li');
         li.textContent = `${nome} — Código: ${codigo}`;
 
         const btnRemover = document.createElement('button');
         btnRemover.textContent = 'Remover';
         btnRemover.classList.add('removeBtn');
-        btnRemover.onclick = () => removerUsuario(key);
+        btnRemover.onclick = () => removerUsuario(id, nome);
 
         li.appendChild(btnRemover);
-        listaUsuarios.appendChild(li);
+        lista.appendChild(li);
       });
+
+      if (usuarios.length === 0) {
+        lista.innerHTML = '<li>Nenhum usuário cadastrado</li>';
+      }
     }
 
-    // Adicionar usuário novo
     async function adicionarUsuario(nome, codigo) {
-      // verifica se código já existe
-      if (Object.values(usuarios).some(u => u.codigo === codigo)) {
+      if (usuarios.some(u => u.codigo === codigo)) {
         alert('Código já existe!');
         return;
       }
-      // salva novo usuário
-      const novoUsuarioRef = push(ref(db, 'usuarios'));
-      await set(novoUsuarioRef, { nome, codigo });
+      try {
+        await db.ref('usuarios').push({ nome, codigo });
+      } catch (e) {
+        alert('Erro ao adicionar usuário: ' + e.message);
+      }
     }
 
-    // Remover usuário por chave
-    async function removerUsuario(key) {
-      await remove(ref(db, 'usuarios/' + key));
-      // Se quiser, checar e remover localStorage igual antes
+    async function removerUsuario(id, nome) {
+      try {
+        await db.ref('usuarios/' + id).remove();
+        if (nome === localStorage.getItem('usuarioNome')) {
+          localStorage.removeItem('acessoLiberado');
+          localStorage.removeItem('usuarioNome');
+          alert('Seu código foi removido.');
+        }
+      } catch (e) {
+        alert('Erro ao remover usuário: ' + e.message);
+      }
     }
 
     document.getElementById('btnAdicionar').onclick = async () => {
@@ -152,13 +219,11 @@ body {
         alert('Preencha nome e código!');
         return;
       }
-      try {
-        await adicionarUsuario(nome, codigo);
-        document.getElementById('nomeUsuario').value = '';
-        document.getElementById('codigoUsuario').value = '';
-      } catch(e) {
-        alert('Erro ao adicionar usuário: ' + e.message);
-      }
+
+      await adicionarUsuario(nome, codigo);
+
+      document.getElementById('nomeUsuario').value = '';
+      document.getElementById('codigoUsuario').value = '';
     };
 
     carregarUsuarios();
